@@ -1,5 +1,7 @@
 const express = require("express")
 const { createProxyMiddleware } = require("http-proxy-middleware")
+const { connectMongo } = require("./config/mongo")
+const { loadCaches, getApiKey, getPolicy, getAllCaches } = require("./core/keyCache")
 
 const app = express()
 const PORT = 4000
@@ -8,6 +10,11 @@ app.use(express.json())
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" })
+})
+
+//debugging endpoint dev only
+app.get("/debug/caches", (req, res) => {
+  res.json(getAllCaches())
 })
 
 //simple logging middleware
@@ -36,6 +43,13 @@ app.use(
   })
 )
 
-app.listen(PORT, () => {
-  console.log(`Gateway running on port ${PORT}`)
-})
+async function start() {
+  await connectMongo()
+  await loadCaches()
+
+  app.listen(PORT, () => {
+    console.log(`Gateway running on port ${PORT}`)
+  })
+}
+
+start()
