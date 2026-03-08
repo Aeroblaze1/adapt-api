@@ -2,6 +2,8 @@ const express = require("express")
 const { createProxyMiddleware } = require("http-proxy-middleware")
 const { connectMongo } = require("./config/mongo")
 const { loadCaches, getApiKey, getPolicy, getAllCaches } = require("./core/keyCache")
+const identityMiddleware = require("./middleware/identity")
+
 
 const app = express()
 const PORT = 4000
@@ -31,17 +33,22 @@ app.use((req, res, next) => {
   next()
 })
 
+
+app.use("/api", identityMiddleware)
+
+
 //mocking upstream or parent provider
-app.use(
-  "/api",
-  createProxyMiddleware({
-    target: "http://localhost:5000",
+app.use("/api", (req, res, next) => {
+  if (!req.upstreamUrl) {
+    return res.status(500).json({ error: "Upstream not resolved" })
+  }
+
+  return createProxyMiddleware({
+    target: req.upstreamUrl,
     changeOrigin: true,
-    pathRewrite: {
-      "^/api": "" //   /api/test -> /test at parent server
-    }
-  })
-)
+    pathRewrite: { "^/api": "" }
+  })(req, res, next)
+})
 
 async function start() {
   await connectMongo()
