@@ -1,0 +1,8 @@
+module.exports = {
+  NORMAL: "NORMAL",
+  WATCH: "WATCH",
+  THROTTLE: "THROTTLE",
+  RESTRICT: "RESTRICT",
+  COOLDOWN: "COOLDOWN",
+  BLOCK: "BLOCK"
+}
