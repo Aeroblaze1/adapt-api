@@ -39,15 +39,15 @@ app.use("/api", identityMiddleware)
 
 //mocking upstream or parent provider
 app.use("/api", (req, res, next) => {
-  if (!req.upstreamUrl) {
-    return res.status(500).json({ error: "Upstream not resolved" })
-  }
+    if (!req.requestContext.upstreamUrl) {
+      return res.status(500).json({ error: "Upstream not resolved" })
+    }
 
-  return createProxyMiddleware({
-    target: req.upstreamUrl,
-    changeOrigin: true,
-    pathRewrite: { "^/api": "" }
-  })(req, res, next)
+    return createProxyMiddleware({
+      target: req.requestContext.upstreamUrl,
+      changeOrigin: true,
+      pathRewrite: { "^/api": "" }
+    })(req, res, next)
 })
 
 async function start() {

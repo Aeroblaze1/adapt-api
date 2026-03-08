@@ -27,11 +27,11 @@ function identityMiddleware(req, res, next) {
     endpointClass: classifyEndpoint(req.path),
     httpMethod: req.method,
     payloadSize: parseInt(req.headers["content-length"] || "0"),
-    headers: req.headers
+    headers: req.headers,
+    upstreamUrl: keyData.upstreamUrl
   })
 
   req.requestContext = context
-  req.upstreamUrl = keyData.upstreamUrl
 
   next()
 }
