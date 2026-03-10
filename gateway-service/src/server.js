@@ -3,6 +3,8 @@ const { createProxyMiddleware } = require("http-proxy-middleware")
 const { connectMongo } = require("./config/mongo")
 const { loadCaches, getApiKey, getPolicy, getAllCaches } = require("./core/keyCache")
 const identityMiddleware = require("./middleware/identity")
+const { connectRedis } = require("./config/redis")
+const metricsMiddleware = require("./middleware/metrics")
 
 
 const app = express()
@@ -36,6 +38,9 @@ app.use((req, res, next) => {
 
 app.use("/api", identityMiddleware)
 
+//identity->metrics->proxy
+app.use("/api", metricsMiddleware)
+
 
 //mocking upstream or parent provider
 app.use("/api", (req, res, next) => {
@@ -53,6 +58,7 @@ app.use("/api", (req, res, next) => {
 async function start() {
   await connectMongo()
   await loadCaches()
+   await connectRedis()
 
   app.listen(PORT, () => {
     console.log(`Gateway running on port ${PORT}`)
