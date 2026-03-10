@@ -5,6 +5,7 @@ const { loadCaches, getApiKey, getPolicy, getAllCaches } = require("./core/keyCa
 const identityMiddleware = require("./middleware/identity")
 const { connectRedis } = require("./config/redis")
 const metricsMiddleware = require("./middleware/metrics")
+const behaviorMiddleware = require("./middleware/behavior")
 
 
 const app = express()
@@ -40,6 +41,8 @@ app.use("/api", identityMiddleware)
 
 //identity->metrics->proxy
 app.use("/api", metricsMiddleware)
+
+app.use("/api", behaviorMiddleware)
 
 
 //mocking upstream or parent provider

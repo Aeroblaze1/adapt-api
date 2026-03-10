@@ -15,21 +15,23 @@ function identityMiddleware(req, res, next) {
   }
 
   // Create initial RequestContext
-  const context = new RequestContext({
-    requestId: generateRequestId(),
-    timestamp: Date.now(),
-    protocol: "REST", // for now fixed
-    apiKey: apiKey,
-    providerId: keyData.parentId,
-    clientIp: req.ip,
-    userAgent: req.headers["user-agent"],
-    endpoint: req.path,
-    endpointClass: classifyEndpoint(req.path),
-    httpMethod: req.method,
-    payloadSize: parseInt(req.headers["content-length"] || "0"),
-    headers: req.headers,
-    upstreamUrl: keyData.upstreamUrl
-  })
+const context = new RequestContext({
+  requestId: generateRequestId(),
+  timestamp: Date.now(),
+  protocol: "REST",
+  apiKey: apiKey,
+  providerId: keyData.parentId,
+  expectedBaseline: keyData.expectedBaseline,
+  policyId: keyData.policyId,
+  clientIp: req.ip,
+  userAgent: req.headers["user-agent"],
+  endpoint: req.path,
+  endpointClass: classifyEndpoint(req.path),
+  httpMethod: req.method,
+  payloadSize: parseInt(req.headers["content-length"] || "0"),
+  headers: req.headers,
+  upstreamUrl: keyData.upstreamUrl
+})
 
   req.requestContext = context
 
