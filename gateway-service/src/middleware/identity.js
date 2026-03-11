@@ -1,5 +1,22 @@
 const RequestContext = require("../../../shared/schemas/RequestContext")
 const { getApiKey } = require("../core/keyCache")
+const { getPolicy } = require("../core/keyCache")
+
+
+function resolveEndpointClass(path, method, policy) {
+  if (!policy || !policy._compiledPatterns) {
+    return "public"
+  }
+
+  for (const p of policy._compiledPatterns) {
+    if (p.regex.test(path) || p.regex.test(`${method}:${path}`)) {
+      return p.class
+    }
+  }
+
+  return "public"
+}
+
 
 function identityMiddleware(req, res, next) {
   const apiKey = req.headers["x-api-key"]
@@ -14,6 +31,20 @@ function identityMiddleware(req, res, next) {
     return res.status(403).json({ error: "Invalid API key" })
   }
 
+  const policy = getPolicy(keyData.policyId)
+
+const endpointClass = resolveEndpointClass(
+  req.path,
+  req.method,
+  policy
+)
+
+/* endpoint detection debugging
+console.log("---------------------");
+console.log("Resolved class:", endpointClass);
+console.log();
+*/
+
   // Create initial RequestContext
 const context = new RequestContext({
   requestId: generateRequestId(),
@@ -26,7 +57,7 @@ const context = new RequestContext({
   clientIp: req.ip,
   userAgent: req.headers["user-agent"],
   endpoint: req.path,
-  endpointClass: classifyEndpoint(req.path),
+  endpointClass: endpointClass,
   httpMethod: req.method,
   payloadSize: parseInt(req.headers["content-length"] || "0"),
   headers: req.headers,
@@ -42,9 +73,5 @@ function generateRequestId() {
   return "req_" + Math.random().toString(36).substring(2, 10)
 }
 
-function classifyEndpoint(path) {
-  if (path.includes("/admin")) return "admin"
-  return "public"
-}
 
 module.exports = identityMiddleware

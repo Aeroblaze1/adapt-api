@@ -10,23 +10,33 @@ function behaviorMiddleware(req, res, next) {
     if (!policy) {
       context.riskScore = 0
       context.anomalyType = "normal"
-      context.deviationScore = 0
       return next()
     }
 
     const result = computeBehavior(context, policy)
 
-    context.deviationScore = result.deviationScore
     context.riskScore = result.riskScore
     context.anomalyType = result.anomalyType
 
+    // ✅ TEMPORARY DEBUG LOG
+    console.log(
+      "[Behavior]",
+      "Parent:", context.providerId,
+      "Key:", context.apiKey,
+      "Rate:", context.requestRateLast60s,
+      "Deviation:", context.frequencyDeviation.toFixed(2),
+      "Burst:", context.burstScore,
+      "Violations:", context.recentViolations,
+      "Risk:", context.riskScore.toFixed(3),
+      "Anomaly:", context.anomalyType
+    )
+
     next()
   } catch (err) {
-    console.error("Behavior engine failure — default safe")
+    console.error("Behavior engine error")
 
     context.riskScore = 0
     context.anomalyType = "normal"
-    context.deviationScore = 0
 
     next()
   }

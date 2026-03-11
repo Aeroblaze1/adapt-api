@@ -1,6 +1,6 @@
 function computeBehavior(context, policy) {
   const {
-    requestRateLast60s,
+    frequencyDeviation,
     burstScore,
     recentViolations,
     endpointClass
@@ -12,32 +12,32 @@ function computeBehavior(context, policy) {
     endpointWeights
   } = policy
 
-  // ----- Frequency Deviation -----
-  const expectedBaseline = context.expectedBaseline || 1
-  const normalizedFrequency =
-    requestRateLast60s / expectedBaseline
+  // ---------- Frequency Component ----------
+  let frequencyRisk = 0
 
-  const frequencyDeviation =
-    normalizedFrequency > thresholds.frequencyDeviation
-      ? normalizedFrequency
-      : 0
+  if (frequencyDeviation > thresholds.frequencyDeviation) {
+    frequencyRisk = frequencyDeviation
+  }
 
-  // ----- Burst -----
-  const burstAnomaly =
-    burstScore > thresholds.burst
-      ? burstScore
-      : 0
+  // ---------- Burst Component ----------
+  let burstRisk = 0
 
-  // ----- Violation Escalation -----
-  const violationPenalty =
-    recentViolations >= thresholds.violationCount
-      ? recentViolations * 0.2
-      : 0
+  if (burstScore > thresholds.burst) {
+  const excess = burstScore - thresholds.burst
+  burstRisk = excess / thresholds.burst
+}
 
-  // ----- Composite Risk -----
+  // ---------- Violation Escalation ----------
+  let violationPenalty = 0
+
+  if (recentViolations >= thresholds.violationCount) {
+    violationPenalty = recentViolations * 0.2
+  }
+
+  // ---------- Weighted Composite ----------
   let baseRisk =
-    (riskWeights.frequency * frequencyDeviation) +
-    (riskWeights.burst * burstAnomaly) +
+    (riskWeights.frequency * frequencyRisk) +
+    (riskWeights.burst * burstRisk) +
     (riskWeights.violation * violationPenalty)
 
   const endpointWeight =
@@ -45,18 +45,28 @@ function computeBehavior(context, policy) {
 
   let riskScore = baseRisk * endpointWeight
 
+  // ---------- Clamp ----------
   if (riskScore > 1) riskScore = 1
   if (riskScore < 0) riskScore = 0
 
-  // ----- Determine anomaly type -----
-  let anomalyType = "normal"
-
-  if (burstAnomaly > 0) anomalyType = "burst"
-  else if (frequencyDeviation > 0) anomalyType = "frequency"
-  else if (violationPenalty > 0) anomalyType = "violation"
+  // ---------- Anomaly Type ----------
+if (recentViolations >= thresholds.violationCount * 2) {
+  anomalyType = "repeat_abuse"
+}
+else if (burstRisk > 0) {
+  anomalyType = "burst"
+}
+else if (frequencyRisk > 0) {
+  anomalyType = "frequency"
+}
+else if (violationPenalty > 0) {
+  anomalyType = "violation"
+}
+else {
+  anomalyType = "normal"
+}
 
   return {
-    deviationScore: normalizedFrequency,
     riskScore,
     anomalyType
   }

@@ -38,8 +38,17 @@ async function seed() {
     },
     endpointWeights: {
       public: 1.0,
-      admin: 2.0
+    admin: 2.0,
+    org_sensitive: 1.8,
+    write: 1.5
+
+      
     },
+    endpointPatterns: [
+    { pattern: "^/admin", class: "admin" },
+    { pattern: "^/org/.*/finance", class: "org_sensitive" },
+    { pattern: "POST:/users", class: "write" }
+  ],
     cooldownSeconds: 30
   })
 

@@ -15,9 +15,21 @@ async function loadCaches() {
     providerCache[p._id] = p
   })
 
-  policies.forEach(pol => {
-    policyCache[pol._id] = pol
-  })
+  //upgraded endpoints diverse classificaiton and caching
+policies.forEach(pol => {
+  if (pol.endpointPatterns) {
+    pol._compiledPatterns = pol.endpointPatterns.map(p => {
+      return {
+        regex: new RegExp(p.pattern),
+        class: p.class
+      }
+    })
+  } else {
+    pol._compiledPatterns = []
+  }
+
+  policyCache[pol._id] = pol
+})
 
   keys.forEach(k => {
     const provider = providerCache[k.providerId]
