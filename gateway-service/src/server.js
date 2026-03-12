@@ -50,15 +50,32 @@ app.use("/api", decisionMiddleware)
 
 //mocking upstream or parent provider
 app.use("/api", (req, res, next) => {
-    if (!req.requestContext.upstreamUrl) {
-      return res.status(500).json({ error: "Upstream not resolved" })
-    }
+  const context = req.requestContext
 
-    return createProxyMiddleware({
-      target: req.requestContext.upstreamUrl,
-      changeOrigin: true,
-      pathRewrite: { "^/api": "" }
-    })(req, res, next)
+  if (!context) {
+    return res.status(500).json({ error: "Request context missing" })
+  }
+
+  if (!context.upstreamUrl) {
+    return res.status(500).json({ error: "Upstream not resolved" })
+  }
+
+  // ---- Attach Decision Headers ----
+  if (context.clientFeedbackHeaders) {
+    Object.entries(context.clientFeedbackHeaders)
+      .forEach(([key, value]) => {
+        res.setHeader(key, value)
+      })
+  }
+
+  // ---- Proxy Forward ----
+  const proxy = createProxyMiddleware({
+    target: context.upstreamUrl,
+    changeOrigin: true,
+    pathRewrite: { "^/api": "" }
+  })
+
+  return proxy(req, res, next)
 })
 
 async function start() {

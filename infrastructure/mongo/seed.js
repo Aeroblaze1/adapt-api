@@ -11,7 +11,7 @@ async function seed() {
     name: "Parent A",
     status: "active",
     plan: {
-      baselinePerMinute: 200//fallback to sla configured baseline
+      baselinePerMinute: 40//fallback to sla configured baseline
     },
     policyId: "policy_enterprise",
     upstreamUrl: "http://localhost:5000",
@@ -22,7 +22,7 @@ async function seed() {
       _id: "ak_001",
     providerId: "parentA",
     status: "active",
-    expectedBaseline: 200,//hardcoded initial baseline but SLA configurable
+    expectedBaseline: 40,//hardcoded initial baseline but SLA configurable
     baselineLastUpdatedAt: new Date(),
     createdAt: new Date()
   })
