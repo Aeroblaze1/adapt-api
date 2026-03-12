@@ -60,12 +60,21 @@ app.use("/api", (req, res, next) => {
 
 async function start() {
   await connectMongo()
+  await connectRedis()
   await loadCaches()
-   await connectRedis()
 
   app.listen(PORT, () => {
     console.log(`Gateway running on port ${PORT}`)
   })
+
+  setInterval(async () => {
+    try {
+      await loadCaches()
+      console.log("Cache refreshed")
+    } catch (err) {
+      console.error("Cache refresh failed")
+    }
+  }, 60000)
 }
 
 start()
