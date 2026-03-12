@@ -22,7 +22,7 @@ function computeBehavior(context, policy) {
   // ---------- Burst Component ----------
   let burstRisk = 0
 
-  if (burstScore > thresholds.burst) {
+  if (thresholds.burst > 0 && burstScore > thresholds.burst) {
   const excess = burstScore - thresholds.burst
   burstRisk = excess / thresholds.burst
 }
@@ -50,6 +50,8 @@ function computeBehavior(context, policy) {
   if (riskScore < 0) riskScore = 0
 
   // ---------- Anomaly Type ----------
+
+  let anomalyType = "normal"
 if (recentViolations >= thresholds.violationCount * 2) {
   anomalyType = "repeat_abuse"
 }
