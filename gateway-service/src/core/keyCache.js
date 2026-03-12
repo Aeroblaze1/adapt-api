@@ -31,19 +31,33 @@ policies.forEach(pol => {
   policyCache[pol._id] = pol
 })
 
-  keys.forEach(k => {
-    const provider = providerCache[k.providerId]
-    if (!provider) return
+keys.forEach(k => {
+  const provider = providerCache[k.providerId]
+  if (!provider) return
 
-    apiKeyCache[k._id] = {
-      apiKey: k._id,
-      parentId: k.providerId,
-      expectedBaseline: k.expectedBaseline,
-      policyId: provider.policyId,
-      upstreamUrl: provider.upstreamUrl,
-      status: k.status
-    }
-  })
+  const slaBaseline =
+    provider.plan?.baselinePerMinute || 1
+
+  let effectiveBaseline =
+    k.expectedBaseline || slaBaseline
+
+  if (effectiveBaseline < slaBaseline) {
+    effectiveBaseline = slaBaseline
+  }
+
+  if (effectiveBaseline <= 0) {
+    effectiveBaseline = slaBaseline
+  }
+
+  apiKeyCache[k._id] = {
+    apiKey: k._id,
+    parentId: k.providerId,
+    expectedBaseline: effectiveBaseline,
+    policyId: provider.policyId,
+    upstreamUrl: provider.upstreamUrl,
+    status: k.status
+  }
+})
 
   console.log("Caches loaded")
 

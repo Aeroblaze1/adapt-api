@@ -9,18 +9,21 @@ async function seed() {
   await db.collection("providers").insertOne({
     _id: "parentA",
     name: "Parent A",
-    tier: "enterprise",
     status: "active",
+    plan: {
+      baselinePerMinute: 200//fallback to sla configured baseline
+    },
     policyId: "policy_enterprise",
     upstreamUrl: "http://localhost:5000",
     createdAt: new Date()
   })
 
   await db.collection("api_keys").insertOne({
-    _id: "ak_001",
+      _id: "ak_001",
     providerId: "parentA",
     status: "active",
-    expectedBaseline: 40,
+    expectedBaseline: 200,//hardcoded initial baseline but SLA configurable
+    baselineLastUpdatedAt: new Date(),
     createdAt: new Date()
   })
 
