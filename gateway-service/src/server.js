@@ -7,6 +7,7 @@ const { connectRedis } = require("./config/redis")
 const metricsMiddleware = require("./middleware/metrics")
 const behaviorMiddleware = require("./middleware/behavior")
 const decisionMiddleware = require("./middleware/decision")
+const enforcementMiddleware = require("./middleware/enforcement")
 
 
 const app = express()
@@ -46,6 +47,8 @@ app.use("/api", metricsMiddleware)
 app.use("/api", behaviorMiddleware)
 
 app.use("/api", decisionMiddleware)
+
+app.use("/api", enforcementMiddleware)
 
 
 //mocking upstream or parent provider
