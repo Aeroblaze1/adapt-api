@@ -43,10 +43,15 @@ async function seed() {
       public: 1.0,
     admin: 2.0,
     org_sensitive: 1.8,
-    write: 1.5
-
-      
+    write: 1.5 
     },
+     decisionThresholds: {
+    watch: 0.2,
+    throttle: 0.4,
+    restrict: 0.6,
+    cooldown: 0.8,
+    block: 0.95
+  },
     endpointPatterns: [
     { pattern: "^/admin", class: "admin" },
     { pattern: "^/org/.*/finance", class: "org_sensitive" },
