@@ -20,6 +20,15 @@ function decisionMiddleware(req, res, next) {
     context.enforcementAction = result.enforcementAction
     context.clientFeedbackHeaders = result.clientFeedbackHeaders
 
+    console.log(
+  "[Decision]",
+  "Parent:", context.providerId,
+  "Key:", context.apiKey,
+  "Risk:", context.riskScore.toFixed(3),
+  "Stage:", context.enforcementStage,
+  "Action:", context.enforcementAction
+)
+
     next()
   } catch (err) {
     console.error("Decision engine failure")

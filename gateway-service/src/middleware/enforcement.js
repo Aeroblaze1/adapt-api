@@ -1,4 +1,5 @@
 const { getRedis } = require("../config/redis")
+const { getPolicy } = require("../core/keyCache")
 const {
   concurrencyKey,
   cooldownKey
@@ -12,6 +13,17 @@ async function enforcementMiddleware(req, res, next) {
   const apiKey = context.apiKey
   const action = context.enforcementAction
 
+  const policy = getPolicy(context.policyId)
+
+if (!policy) {
+  console.warn("[Enforcement] Missing policy — allowing request")
+  return next()
+}
+
+if (!policy.enforcement) {
+  console.warn("[Enforcement] Missing enforcement config — using defaults")
+}
+
   const cKey = concurrencyKey(parentId, apiKey)
   const cdKey = cooldownKey(parentId, apiKey)
 
@@ -19,6 +31,7 @@ async function enforcementMiddleware(req, res, next) {
 
     // ---------- BLOCK_TEMP ----------
     if (action === "BLOCK_TEMP") {
+  console.log("[Enforcement] BLOCK_TEMP applied")
       return res.status(429).json({
         error: "Temporarily blocked"
       })
@@ -26,6 +39,7 @@ async function enforcementMiddleware(req, res, next) {
 
     // ---------- TEMP_COOLDOWN ----------
     if (action === "TEMP_COOLDOWN") {
+    console.log("[Enforcement] TEMP_COOLDOWN triggered")
       const exists = await redis.get(cdKey)
 
       if (exists) {
@@ -35,7 +49,7 @@ async function enforcementMiddleware(req, res, next) {
       }
 
       const policy = req.requestContext.policyId
-      const cooldownSeconds = 30
+      const cooldownSeconds = policy?.enforcement?.cooldownSeconds || 30
 
       await redis.set(cdKey, "1", {
         EX: cooldownSeconds
@@ -46,31 +60,43 @@ async function enforcementMiddleware(req, res, next) {
       })
     }
 
-    // ---------- LIMIT_CONCURRENCY ----------
-    if (action === "LIMIT_CONCURRENCY") {
 
-      const current = await redis.incr(cKey)
+// ---------- LIMIT_CONCURRENCY ----------
+if (action === "LIMIT_CONCURRENCY") {
 
-      const MAX_CONCURRENCY = 5
+  const raw = await redis.incr(cKey)
+  const current = parseInt(raw, 10)
 
-      if (current > MAX_CONCURRENCY) {
-        await redis.decr(cKey)
-        return res.status(429).json({
-          error: "Concurrency limit exceeded"
-        })
-      }
+  if (isNaN(current)) {
+    throw new Error("Invalid concurrency value")
+  }
 
-      res.on("finish", async () => {
-        try {
-          await redis.decr(cKey)
-        } catch {}
-      })
+const policy = getPolicy(context.policyId)
+const MAX_CONCURRENCY = policy?.enforcement?.maxConcurrency || 5
 
-      return next()
+  console.log("[Enforcement] LIMIT_CONCURRENCY current:", current)
+
+  if (current > MAX_CONCURRENCY) {
+    await redis.decr(cKey)
+    return res.status(429).json({
+      error: "Concurrency limit exceeded"
+    })
+  }
+
+  res.once("close", async () => {
+    try {
+      await redis.decr(cKey)
+    } catch (err) {
+      console.error("Concurrency decrement failed")
     }
+  })
+
+  return next()
+}
 
     // ---------- SOFT_THROTTLE ----------
     if (action === "SOFT_THROTTLE") {
+    console.log("[Enforcement] SOFT_THROTTLE delay applied")
 
       await delay(100)
 

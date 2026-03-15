@@ -9,6 +9,12 @@ const behaviorMiddleware = require("./middleware/behavior")
 const decisionMiddleware = require("./middleware/decision")
 const enforcementMiddleware = require("./middleware/enforcement")
 
+/**
+ * if sending repeated rapid requests, Each request reaches proxy, Proxy middleware attaches listeners, Listener count exceeds default (10), node memory leak event emitter warning
+ */
+const events = require("events")
+events.defaultMaxListeners = 50
+
 
 const app = express()
 const PORT = 4000
@@ -52,6 +58,18 @@ app.use("/api", enforcementMiddleware)
 
 
 //mocking upstream or parent provider
+const apiProxy = createProxyMiddleware({
+  changeOrigin: true,
+  pathRewrite: { "^/api": "" },
+  router: (req) => {
+    const context = req.requestContext
+    if (!context || !context.upstreamUrl) {
+      return null
+    }
+    return context.upstreamUrl
+  }
+})
+//proxy instance creaeted once so listeners dont accumulate
 app.use("/api", (req, res, next) => {
   const context = req.requestContext
 
@@ -63,7 +81,6 @@ app.use("/api", (req, res, next) => {
     return res.status(500).json({ error: "Upstream not resolved" })
   }
 
-  // ---- Attach Decision Headers ----
   if (context.clientFeedbackHeaders) {
     Object.entries(context.clientFeedbackHeaders)
       .forEach(([key, value]) => {
@@ -71,14 +88,10 @@ app.use("/api", (req, res, next) => {
       })
   }
 
-  // ---- Proxy Forward ----
-  const proxy = createProxyMiddleware({
-    target: context.upstreamUrl,
-    changeOrigin: true,
-    pathRewrite: { "^/api": "" }
-  })
+// Artificial delay to force overlap
+  // await new Promise(resolve => setTimeout(resolve, 500))
 
-  return proxy(req, res, next)
+  return apiProxy(req, res, next)
 })
 
 async function start() {
