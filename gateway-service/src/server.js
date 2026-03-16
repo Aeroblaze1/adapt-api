@@ -8,6 +8,7 @@ const metricsMiddleware = require("./middleware/metrics")
 const behaviorMiddleware = require("./middleware/behavior")
 const decisionMiddleware = require("./middleware/decision")
 const enforcementMiddleware = require("./middleware/enforcement")
+const eventsMiddleware = require("./middleware/events")
 
 /**
  * if sending repeated rapid requests, Each request reaches proxy, Proxy middleware attaches listeners, Listener count exceeds default (10), node memory leak event emitter warning
@@ -55,6 +56,8 @@ app.use("/api", behaviorMiddleware)
 app.use("/api", decisionMiddleware)
 
 app.use("/api", enforcementMiddleware)
+
+app.use("/api", eventsMiddleware)//events occur after enforcement
 
 
 //mocking upstream or parent provider
