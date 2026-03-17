@@ -26,6 +26,8 @@ async function startConsumer(redis, workerId) {
           await processRequestEvent(event)
 
           await redis.xAck(STREAM_KEY, GROUP_NAME, message.id)
+
+          console.log("Message received:", message.id)
         } catch (err) {
           console.error("Event processing failed", err)
         }

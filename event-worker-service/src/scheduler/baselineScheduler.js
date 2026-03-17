@@ -8,7 +8,7 @@ function startBaselineScheduler() {
     } catch (err) {
       console.error("Baseline recompute failed", err)
     }
-  }, 300000)
+  }, 300000)//5 minutes
 }
 
 module.exports = startBaselineScheduler
