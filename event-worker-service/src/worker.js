@@ -1,15 +1,22 @@
-const { connectRedis } = require("./config/redis")
-const { initConsumerGroup } = require("./stream/initGroup")
+const { connectRedis, getRedis } = require("./config/redis")
+const { connectMongo } = require("./config/mongo")
+const { ensureConsumerGroup } = require("./stream/group")
+const startConsumer = require("./stream/consumer")
+const startBaselineScheduler = require("./scheduler/baselineScheduler")
 
 async function start() {
   await connectRedis()
-  await initConsumerGroup()
+  await connectMongo()
 
-  console.log("Worker started")
-  // Next: start consumer loop
+  const redis = getRedis()
+
+  await ensureConsumerGroup(redis)
+
+  const workerId = "worker-" + process.pid
+
+  startBaselineScheduler()
+
+  await startConsumer(redis, workerId)
 }
 
-start().catch(err => {
-  console.error("Worker failed:", err)
-  process.exit(1)
-})
+start()
