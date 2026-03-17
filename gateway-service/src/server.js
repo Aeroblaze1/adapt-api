@@ -55,9 +55,11 @@ app.use("/api", behaviorMiddleware)
 
 app.use("/api", decisionMiddleware)
 
-app.use("/api", enforcementMiddleware)
 
-app.use("/api", eventsMiddleware)//events occur after enforcement
+app.use("/api", eventsMiddleware)
+
+
+app.use("/api", enforcementMiddleware)
 
 
 //mocking upstream or parent provider
