@@ -5,7 +5,10 @@ async function processRequestEvent(event) {
 
   await db.collection("request_logs").updateOne(
     { requestId: event.requestId },
-    { $setOnInsert: event },
+    { $setOnInsert: {
+  ...event,
+  timestamp: new Date(event.timestamp)
+} },
     { upsert: true }
   )
 
