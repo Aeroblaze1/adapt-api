@@ -1,3 +1,4 @@
+const cors = require("cors")
 const express = require("express")
 const { connectMongo } = require("./config/mongo")
 
@@ -9,6 +10,7 @@ const alertRoutes = require("./routes/alerts")
 const app = express()
 const PORT = 4500
 
+app.use(cors())
 app.use(express.json())
 
 app.get("/health", (req, res) => {

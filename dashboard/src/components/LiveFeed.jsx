@@ -5,9 +5,9 @@ export default function LiveFeed() {
   const [events, setEvents] = useState([])
 
   useEffect(() => {
-    connectSocket((event) => {
-      setEvents(prev => [event, ...prev.slice(0, 20)])
-    })
+    // connectSocket((event) => {
+    //   setEvents(prev => [event, ...prev.slice(0, 20)])
+    // })
   }, [])
 
   return (
