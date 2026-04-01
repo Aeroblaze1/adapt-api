@@ -16,7 +16,8 @@ function computeBehavior(context, policy) {
   let frequencyRisk = 0
 
   if (frequencyDeviation > thresholds.frequencyDeviation) {
-    frequencyRisk = frequencyDeviation
+    const excess = frequencyDeviation - thresholds.frequencyDeviation
+frequencyRisk = excess / (excess + 1)
   }
 
   // ---------- Burst Component ----------
@@ -24,14 +25,14 @@ function computeBehavior(context, policy) {
 
   if (thresholds.burst > 0 && burstScore > thresholds.burst) {
   const excess = burstScore - thresholds.burst
-  burstRisk = excess / thresholds.burst
+  burstRisk = excess / (excess + thresholds.burst)
 }
 
   // ---------- Violation Escalation ----------
   let violationPenalty = 0
 
   if (recentViolations >= thresholds.violationCount) {
-    violationPenalty = recentViolations * 0.2
+    violationPenalty = recentViolations / (recentViolations + 5)
   }
 
   // ---------- Weighted Composite ----------
@@ -39,6 +40,8 @@ function computeBehavior(context, policy) {
     (riskWeights.frequency * frequencyRisk) +
     (riskWeights.burst * burstRisk) +
     (riskWeights.violation * violationPenalty)
+
+  baseRisk = Math.min(1, baseRisk)
 
   const endpointWeight =
     endpointWeights[endpointClass] || 1
