@@ -1,6 +1,6 @@
 const { STREAM_KEY, GROUP_NAME } = require("./group")
 const processRequestEvent = require("../processors/requestProcessor")
-
+const { broadcast } = require("../ws/server")
 
 
 async function recreateGroup(redis) {
@@ -120,6 +120,9 @@ async function processEntries(redis, entries) {
         const event = JSON.parse(raw)
 
         await processRequestEvent(event)
+
+        // NEW: push to frontend
+        broadcast(event)
 
         await redis.xAck(STREAM_KEY, GROUP_NAME, message.id)
 

@@ -16,8 +16,15 @@ function fmtTime(ts) {
   return d.toTimeString().slice(0, 8)
 }
 
-export default function LiveFeed() {
+
+export default function LiveFeed({ providerId, apiKey }) {
   const [events, setEvents] = useState([])
+
+  const filteredEvents = events.filter(e => {
+  if (apiKey) return e.apiKey === apiKey
+  if (providerId) return e.providerId === providerId
+  return true
+})
 
   useEffect(() => {
     connectSocket((event) => {
@@ -37,14 +44,16 @@ export default function LiveFeed() {
       </div>
 
       <div className="live-feed-body">
-        {events.length === 0 && (
+        {filteredEvents.length === 0 && (
           <div className="feed-idle">
             <span className="feed-idle-dot" />
             awaiting events…
           </div>
         )}
-        {events.map((e, i) => {
+        {filteredEvents.map((e, i) => {
           const score = e.analysis?.riskScore 
+
+
           return (
             <div key={i} className={`feed-event ${riskClass(score)}`}>
               <span className="fe-ts">[{fmtTime(e.timestamp)}]</span>

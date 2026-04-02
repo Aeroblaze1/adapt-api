@@ -82,7 +82,7 @@ export default function Dashboard() {
 
         {/* Right: live feed */}
         <div className="terminal-right">
-          <LiveFeed />
+          <LiveFeed providerId={providerId} apiKey={apiKey} />
         </div>
 
       </div>
