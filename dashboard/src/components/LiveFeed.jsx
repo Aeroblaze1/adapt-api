@@ -17,7 +17,7 @@ function fmtTime(ts) {
 }
 
 
-export default function LiveFeed({ providerId, apiKey }) {
+export default function LiveFeed({ providerId, apiKey, setLiveEvents }){
   const [events, setEvents] = useState([])
 
   const filteredEvents = events.filter(e => {
@@ -28,8 +28,11 @@ export default function LiveFeed({ providerId, apiKey }) {
 
   useEffect(() => {
     connectSocket((event) => {
-      setEvents(prev => [event, ...prev.slice(0, 50)])
-    })
+  setEvents(prev => [event, ...prev.slice(0, 50)])
+
+  // NEW: push to shared state
+  setLiveEvents(prev => [event, ...prev.slice(0, 50)])
+})
   }, [])
 
   return (

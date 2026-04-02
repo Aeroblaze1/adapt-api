@@ -6,10 +6,12 @@ import AlertsTable from "../components/AlertsTable"
 import LiveFeed from "../components/LiveFeed"
 import CommandBar from "../components/CommandBar"
 
+
 export default function Dashboard() {
   const [providerId, setProviderId]   = useState(null)
   const [providerName, setProviderName] = useState(null)
   const [apiKey, setApiKey]           = useState(null)
+  const [liveEvents, setLiveEvents] = useState([])
 
   function selectProvider(id, name) {
     setProviderId(id)
@@ -74,7 +76,10 @@ export default function Dashboard() {
 
         {/* Center: risk graph + alerts */}
         <div className="terminal-center">
-          <RiskGraph apiKey={apiKey} />
+          <RiskGraph
+  apiKey={apiKey}
+  liveEvents={liveEvents}
+/>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
             <AlertsTable providerId={providerId} apiKey={apiKey} />
           </div>
@@ -82,7 +87,11 @@ export default function Dashboard() {
 
         {/* Right: live feed */}
         <div className="terminal-right">
-          <LiveFeed providerId={providerId} apiKey={apiKey} />
+          <LiveFeed
+  providerId={providerId}
+  apiKey={apiKey}
+  setLiveEvents={setLiveEvents}
+/>
         </div>
 
       </div>

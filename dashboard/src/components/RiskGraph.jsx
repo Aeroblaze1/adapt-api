@@ -2,9 +2,16 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { useEffect, useState } from "react"
 import { fetchRiskHistory } from "../services/api"
 
-export default function RiskGraph({ apiKey }) {
+export default function RiskGraph({ apiKey, liveEvents }){
   const [data, setData] = useState([])
 
+
+//clear
+  useEffect(() => {
+  setData([])
+}, [apiKey])
+
+//fetch
   useEffect(() => {
     if (!apiKey) return
     fetchRiskHistory(apiKey).then(raw => {
@@ -18,6 +25,30 @@ export default function RiskGraph({ apiKey }) {
       setData(sorted)
     })
   }, [apiKey])
+
+
+// live events
+useEffect(() => {
+  if (!liveEvents || liveEvents.length === 0) return
+
+  const latestEvent = liveEvents[0]
+
+  // only update if it matches current apiKey
+  if (!latestEvent || latestEvent.apiKey !== apiKey) return
+
+  setData(prev => {
+    const newPoint = {
+      id: prev.length,   // sequential id (IMPORTANT)
+      timestamp: latestEvent.timestamp,
+      riskScore: latestEvent.analysis.riskScore,
+      time: new Date(latestEvent.timestamp).toTimeString().slice(0, 8)
+    }
+
+    return [...prev, newPoint].slice(-100)
+  })
+}, [liveEvents, apiKey])
+
+
 
 const latest = data.length ? data[data.length - 1].riskScore : null
 
