@@ -1,19 +1,22 @@
 import { useState } from "react"
 
 const HINTS = [
-  "type a command or press ↑↓ to navigate",
-  "e.g.: select provider, filter keys…",
-  "console ready",
+  "help",
+  "select provider parentA",
+  "select key ak_001",
+  "clear"
 ]
 
-export default function CommandBar() {
+export default function CommandBar({onCommand}) {
   const [value, setValue] = useState("")
-  const [hint] = useState(HINTS[2])
+const [hint] = useState(HINTS[0])
 
   function handleKey(e) {
     if (e.key === "Enter" && value.trim()) {
+      onCommand?.(value.trim())
       setValue("")
     }
+
     if (e.key === "Escape") {
       setValue("")
     }
@@ -32,7 +35,12 @@ export default function CommandBar() {
         autoComplete="off"
         spellCheck={false}
       />
+      
+      
       <span className="cb-hint">ESC to clear</span>
+
+      
     </div>
+    
   )
 }

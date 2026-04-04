@@ -7,6 +7,7 @@ import LiveFeed from "../components/LiveFeed"
 import CommandBar from "../components/CommandBar"
 
 
+
 export default function Dashboard() {
   const [providerId, setProviderId]   = useState(null)
   const [providerName, setProviderName] = useState(null)
@@ -18,6 +19,37 @@ export default function Dashboard() {
     setProviderName(name)
     setApiKey(null)   // reset key when provider changes
   }
+
+  function handleCommand(command) {
+  const parts = command.trim().split(" ")
+
+  if (parts[0] === "select" && parts[1] === "provider") {
+    setProviderId(parts[2])
+    setApiKey(null)
+  }
+
+  if (parts[0] === "select" && parts[1] === "key") {
+    setApiKey(parts[2])
+  }
+
+  if (command === "help") {
+  alert(`
+Available commands:
+
+select provider <providerId> (Parent A -> parentA)
+select key <apiKey>
+clear
+
+Example:
+select provider parentA
+select key ak_001
+  `)
+}
+
+  if (command === "clear") {
+    window.location.reload() // simplest safe reset
+  }
+}
 
   return (
     <div className="terminal-container">
@@ -97,7 +129,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Command Bar ─────────────────────────────── */}
-      <CommandBar />
+      <CommandBar onCommand={handleCommand} />
 
     </div>
   )

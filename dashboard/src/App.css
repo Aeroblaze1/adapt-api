@@ -118,6 +118,7 @@
   }
 }
 
+
 #spacer {
   height: 88px;
   border-top: 1px solid var(--border);
@@ -132,6 +133,12 @@
   margin-left: 4px;
   color: var(--yellow);
   font-size: 11px;
+}
+
+.cb-help {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-left: 8px;
 }
 
 .ticks {
