@@ -3,6 +3,10 @@ node_modules/
 package-lock.json
 yarn.lock
 
+#k6
+tools/k6/*
+!tools/k6/.gitkeep
+
 # Environment variables
 .env
 .env.local
