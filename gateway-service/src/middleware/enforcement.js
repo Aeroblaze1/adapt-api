@@ -2,6 +2,7 @@ const { getRedis } = require("../config/redis")
 const { getPolicy } = require("../core/keyCache")
 const { publishEvent } = require("../events/eventPublisher")
 const {
+  violationKey,
   concurrencyKey,
   cooldownKey
 } = require("../core/redisKeys")
@@ -41,6 +42,16 @@ async function emitEnforcementEvent(ctx, action, reason, statusCode) {
   }
 }
 
+async function recordViolation(redis, parentId, apiKey) {
+  const vKey = violationKey(parentId, apiKey)
+
+  const pipeline = redis.multi()
+  pipeline.incr(vKey)
+  pipeline.expire(vKey, 60)
+  await pipeline.exec()
+
+  return vKey
+}
 
 
 async function enforcementMiddleware(req, res, next) {
@@ -50,8 +61,6 @@ async function enforcementMiddleware(req, res, next) {
   const parentId = context.providerId
   const apiKey = context.apiKey
   const action = context.enforcementAction
-
-  const violationKey = `violations:${parentId}:${apiKey}`
 
   const policy = getPolicy(context.policyId)
 
@@ -71,8 +80,7 @@ if (!policy.enforcement) {
 
     // ---------- BLOCK_TEMP ----------
     if (action === "BLOCK_TEMP") {
-      await redis.incr(violationKey)
-await redis.expire(violationKey, 60) // 60s decay window
+      await recordViolation(redis, parentId, apiKey)
   console.log("[Enforcement] BLOCK_TEMP applied")
 
   await emitEnforcementEvent(context, "BLOCK", "temp_block", 429)
@@ -90,6 +98,7 @@ if (action === "TEMP_COOLDOWN") {
   const exists = await redis.get(cdKey)
 
   if (exists) {
+    await recordViolation(redis, parentId, apiKey)
     await emitEnforcementEvent(context, "BLOCK", "cooldown_active", 429)
 
     return res.status(429).json({
@@ -97,8 +106,7 @@ if (action === "TEMP_COOLDOWN") {
     })
   }
 
-    await redis.incr(violationKey)
-await redis.expire(violationKey, 60) // 60s decay window
+  await recordViolation(redis, parentId, apiKey)
 
   const cooldownSeconds = policy?.enforcement?.cooldownSeconds || 30
 
@@ -116,7 +124,7 @@ await redis.expire(violationKey, 60) // 60s decay window
 
 // ---------- LIMIT_CONCURRENCY ----------
 if (action === "LIMIT_CONCURRENCY") {
-  
+  await recordViolation(redis, parentId, apiKey)
 
   const raw = await redis.incr(cKey)
   const current = parseInt(raw, 10)
@@ -131,9 +139,6 @@ const MAX_CONCURRENCY = policy?.enforcement?.maxConcurrency || 5
 
   if (current > MAX_CONCURRENCY) {
   await redis.decr(cKey)
-
-    await redis.incr(violationKey)
-  await redis.expire(violationKey, 60)
 
   await emitEnforcementEvent(context, "BLOCK", "concurrency_limit", 429)
 
@@ -155,8 +160,7 @@ const MAX_CONCURRENCY = policy?.enforcement?.maxConcurrency || 5
 
     // ---------- SOFT_THROTTLE ----------
     if (action === "SOFT_THROTTLE") {
-
-await redis.expire(violationKey, 60) // 60s decay window
+  await recordViolation(redis, parentId, apiKey)
 
   console.log("[Enforcement] SOFT_THROTTLE delay applied")
 
