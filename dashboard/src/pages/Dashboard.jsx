@@ -29,7 +29,7 @@ export default function Dashboard() {
           <span className="t-dot-yellow" />
           <span className="t-dot-green" />
         </div>
-        <span className="t-title">adapt-api // control console</span>
+        <span className="t-title">adapt-api</span>
         <div className="t-status">
           <span className="t-status-dot" />
           connected

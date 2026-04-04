@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { fetchAlerts, fetchRiskHistory } from "../services/api"
+import { connectSocket } from "../services/socket"
+
 
 function sevClass(risk) {
   if (risk > 0.7) return "sev-high"
@@ -16,21 +17,55 @@ function fmtTime(ts) {
 export default function AlertsTable({ providerId, apiKey }) {
   const [alerts, setAlerts] = useState([])
 
-  useEffect(() => {
-    // If an API key is selected, derive alerts from its risk history
-    // because the backend does not actively populate the alerts collection yet.
-    if (apiKey) {
-      fetchRiskHistory(apiKey).then(history => {
-        const derivedAlerts = history.filter(h => h.riskScore > 0.4)
-        setAlerts(derivedAlerts)
-      })
-    } else if (providerId) {
-      // Fallback
-      fetchAlerts(providerId).then(setAlerts)
-    } else {
-      setAlerts([])
-    }
-  }, [providerId, apiKey])
+useEffect(() => {
+
+  const disconnect = connectSocket((event) => {
+
+    const score = event.analysis?.riskScore ?? 0
+    const action = event.decision?.action
+    const providerMatch = !providerId || event.providerId === providerId
+    const apiKeyMatch = !apiKey || event.apiKey === apiKey
+
+    if (!providerMatch || !apiKeyMatch) return
+
+const isAlert =
+  action === "BLOCK" ||
+  score > 0.75
+
+    if (!isAlert) return
+
+   const alert = {
+  alertId: `${event.apiKey}_${event.timestamp}`,
+  apiKey: event.apiKey,
+  type: action || "ALERT",
+  riskScore: score,
+  timestamp: event.timestamp,
+  reason: event.enforcement?.reason
+}
+
+   setAlerts(prev => {
+  const last = prev[0]
+
+  // avoid duplicate spam
+  if (
+    last &&
+    last.apiKey === alert.apiKey &&
+    last.type === alert.type &&
+    Math.abs(last.riskScore - alert.riskScore) < 0.05
+  ) {
+    return prev
+  }
+
+  return [alert, ...prev.slice(0, 20)]
+})
+  })
+
+  return () => {
+    if (disconnect) disconnect()
+  }
+}, [providerId, apiKey])
+
+const sortedAlerts = [...alerts].sort((a, b) => b.riskScore - a.riskScore)
 
   return (
     <div className="t-panel">
@@ -47,7 +82,7 @@ export default function AlertsTable({ providerId, apiKey }) {
         {providerId && alerts.length === 0 && (
           <div className="t-empty">no alerts</div>
         )}
-        {alerts.map(a => (
+        {sortedAlerts.map(a => (
           <div
             key={a.timestamp}
             className={`alert-line ${sevClass(a.riskScore)}`}
@@ -56,9 +91,16 @@ export default function AlertsTable({ providerId, apiKey }) {
             <span className="al-key">{a.apiKey}</span>
             <span className="al-arrow">→</span>
             <span className="al-type">
-  {a.riskScore > 0.7 ? "BLOCK" : "THROTTLE"}
-</span>
-            <span className="al-risk">({(a.riskScore ?? 0).toFixed(2)})</span>
+              {a.type}
+            </span>
+            <span className="al-risk">
+              ({(a.riskScore ?? 0).toFixed(2)})
+              {a.reason && (
+  <span style={{ marginLeft: 6, color: "var(--yellow)" }}>
+    ({a.reason})
+  </span>
+)}
+            </span>
           </div>
         ))}
       </div>

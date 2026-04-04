@@ -5,7 +5,7 @@ export let options = {
   scenarios: {
     burst_test: {
       executor: 'constant-arrival-rate',
-      rate: 100,        // 100 requests per second
+      rate: 150,        // 100 requests per second
       timeUnit: '1s',
       duration: '10s',
       preAllocatedVUs: 20,
@@ -17,7 +17,7 @@ export let options = {
 export default function () {
   http.get('http://localhost:4000/api/test', {
     headers: {
-      'x-api-key': 'ak_101'
+      'x-api-key': 'ak_002'
     }
   })
 }

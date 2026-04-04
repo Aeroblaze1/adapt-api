@@ -54,19 +54,35 @@ export default function LiveFeed({ providerId, apiKey, setLiveEvents }){
           </div>
         )}
         {filteredEvents.map((e, i) => {
-          const score = e.analysis?.riskScore 
+  const score = e.analysis?.riskScore ?? 0
+  const action = e.decision?.action || "ALLOW"
+  const status = e.response?.statusCode || 200
+  const reason = e.enforcement?.reason
 
+  return (
+    <div key={i} className={`feed-event ${riskClass(score)}`}>
 
-          return (
-            <div key={i} className={`feed-event ${riskClass(score)}`}>
-              <span className="fe-ts">[{fmtTime(e.timestamp)}]</span>
-              <span className="fe-key">{e.apiKey}</span>
-              <span className="fe-arrow">→</span>
-              <span className="fe-stage">{e.decision?.stage}</span>
-              <span className="fe-risk">{score.toFixed(2)}</span>
-            </div>
-          )
-        })}
+      <span className="fe-ts">
+  {action === "BLOCK" ? "🔴" : action === "THROTTLE" ? "🟡" : "🟢"} [{fmtTime(e.timestamp)}]
+</span>
+
+      <span className="fe-key">{e.apiKey}</span>
+
+      <span className="fe-arrow">→</span>
+
+      <span className="fe-stage">{action}</span>
+
+      <span className="fe-risk">{score.toFixed(2)}</span>
+
+      <span className="fe-status">{status}</span>
+
+      {reason && (
+        <span className="fe-reason">({reason})</span>
+      )}
+
+    </div>
+  )
+})}
       </div>
     </div>
   )

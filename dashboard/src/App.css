@@ -123,6 +123,17 @@
   border-top: 1px solid var(--border);
 }
 
+.fe-status {
+  margin-left: 6px;
+  color: var(--text-dim);
+}
+
+.fe-reason {
+  margin-left: 4px;
+  color: var(--yellow);
+  font-size: 11px;
+}
+
 .ticks {
   position: relative;
   width: 100%;
