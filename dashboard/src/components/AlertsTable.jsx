@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { connectSocket } from "../services/socket"
-
+import { useRef } from "react"
 
 function sevClass(risk) {
   if (risk > 0.7) return "sev-high"
@@ -16,6 +16,7 @@ function fmtTime(ts) {
 
 export default function AlertsTable({ providerId, apiKey }) {
   const [alerts, setAlerts] = useState([])
+  const logRef = useRef(null)
 
 useEffect(() => {
 
@@ -29,8 +30,7 @@ useEffect(() => {
     if (!providerMatch || !apiKeyMatch) return
 
 const isAlert =
-  action === "BLOCK" ||
-  score > 0.75
+  action === "BLOCK"
 
     if (!isAlert) return
 
@@ -56,7 +56,7 @@ const isAlert =
     return prev
   }
 
-  return [alert, ...prev.slice(0, 20)]
+  return [alert, ...prev.slice(0, 30)]
 })
   })
 
@@ -65,7 +65,14 @@ const isAlert =
   }
 }, [providerId, apiKey])
 
-const sortedAlerts = [...alerts].sort((a, b) => b.riskScore - a.riskScore)
+
+useEffect(() => {
+  if (logRef.current) {
+    logRef.current.scrollTop = 0
+  }
+}, [alerts])
+
+const sortedAlerts = [...alerts].sort((a, b) => b.riskScore - a.riskScore)//if LIMIT_CONCURENCY alert is shown and you dont want it show , add filter method where a.type!=LIMIT_CONCURRENCY
 
   return (
     <div className="t-panel">
@@ -75,7 +82,8 @@ const sortedAlerts = [...alerts].sort((a, b) => b.riskScore - a.riskScore)
         <span className="t-panel-count">{alerts.length}</span>
       </div>
 
-      <div className="alerts-log">
+      <div className="alerts-log" ref={logRef}>
+        
         {!providerId && (
           <div className="t-empty">← select a provider to view alerts</div>
         )}
