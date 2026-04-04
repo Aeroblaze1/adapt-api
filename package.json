@@ -5,11 +5,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "load:test": "./tools/k6/k6 run load-tests/load-controlled.js",
-    "load:burst": "./tools/k6/k6 run load-tests/load-burst.js",
-    "load:basic": "./tools/k6/k6 run load-tests/load-basic.js",
-    "load:multi": "./tools/k6/k6 run load-tests/load-multi.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
 
   },
   "keywords": [],

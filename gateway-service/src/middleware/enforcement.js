@@ -1,9 +1,47 @@
 const { getRedis } = require("../config/redis")
 const { getPolicy } = require("../core/keyCache")
+const { publishEvent } = require("../events/eventPublisher")
 const {
   concurrencyKey,
   cooldownKey
 } = require("../core/redisKeys")
+
+
+
+async function emitEnforcementEvent(ctx, action, reason, statusCode) {
+  const event = {
+    apiKey: ctx.apiKey,
+    providerId: ctx.providerId,
+    timestamp: Date.now(),
+
+    analysis: {
+      riskScore: ctx.riskScore,
+      anomalyType: ctx.anomalyType
+    },
+
+    decision: {
+      stage: ctx.stage,
+      action
+    },
+
+    enforcement: {
+      reason,
+      blocked: statusCode !== 200
+    },
+
+    response: {
+      statusCode
+    }
+  }
+
+  try {
+    await publishEvent(event)
+  } catch (err) {
+    console.warn("Event emit failed")
+  }
+}
+
+
 
 async function enforcementMiddleware(req, res, next) {
   const context = req.requestContext
@@ -32,33 +70,40 @@ if (!policy.enforcement) {
     // ---------- BLOCK_TEMP ----------
     if (action === "BLOCK_TEMP") {
   console.log("[Enforcement] BLOCK_TEMP applied")
-      return res.status(429).json({
-        error: "Temporarily blocked"
-      })
-    }
+
+  await emitEnforcementEvent(context, "BLOCK", "temp_block", 429)
+
+  return res.status(429).json({
+    error: "Temporarily blocked"
+  })
+}
 
     // ---------- TEMP_COOLDOWN ----------
-    if (action === "TEMP_COOLDOWN") {
-    console.log("[Enforcement] TEMP_COOLDOWN triggered")
-      const exists = await redis.get(cdKey)
+if (action === "TEMP_COOLDOWN") {
+  console.log("[Enforcement] TEMP_COOLDOWN triggered")
 
-      if (exists) {
-        return res.status(429).json({
-          error: "Cooldown active"
-        })
-      }
+  const exists = await redis.get(cdKey)
 
-      const policy = req.requestContext.policyId
-      const cooldownSeconds = policy?.enforcement?.cooldownSeconds || 30
+  if (exists) {
+    await emitEnforcementEvent(context, "BLOCK", "cooldown_active", 429)
 
-      await redis.set(cdKey, "1", {
-        EX: cooldownSeconds
-      })
+    return res.status(429).json({
+      error: "Cooldown active"
+    })
+  }
 
-      return res.status(429).json({
-        error: "Cooldown initiated"
-      })
-    }
+  const cooldownSeconds = policy?.enforcement?.cooldownSeconds || 30
+
+  await redis.set(cdKey, "1", {
+    EX: cooldownSeconds
+  })
+
+  await emitEnforcementEvent(context, "BLOCK", "cooldown_start", 429)
+
+  return res.status(429).json({
+    error: "Cooldown initiated"
+  })
+}
 
 
 // ---------- LIMIT_CONCURRENCY ----------
@@ -77,11 +122,14 @@ const MAX_CONCURRENCY = policy?.enforcement?.maxConcurrency || 5
   console.log("[Enforcement] LIMIT_CONCURRENCY current:", current)
 
   if (current > MAX_CONCURRENCY) {
-    await redis.decr(cKey)
-    return res.status(429).json({
-      error: "Concurrency limit exceeded"
-    })
-  }
+  await redis.decr(cKey)
+
+  await emitEnforcementEvent(context, "BLOCK", "concurrency_limit", 429)
+
+  return res.status(429).json({
+    error: "Concurrency limit exceeded"
+  })
+}
 
   res.once("close", async () => {
     try {
@@ -96,12 +144,14 @@ const MAX_CONCURRENCY = policy?.enforcement?.maxConcurrency || 5
 
     // ---------- SOFT_THROTTLE ----------
     if (action === "SOFT_THROTTLE") {
-    console.log("[Enforcement] SOFT_THROTTLE delay applied")
+  console.log("[Enforcement] SOFT_THROTTLE delay applied")
 
-      await delay(100)
+  await delay(100)
 
-      return next()
-    }
+  await emitEnforcementEvent(context, "THROTTLE", "soft_throttle", 200)
+
+  return next()
+}
 
     // ---------- ALERT_ONLY ----------
     if (action === "ALERT_ONLY") {
