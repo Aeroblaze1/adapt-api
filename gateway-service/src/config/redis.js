@@ -1,6 +1,6 @@
 const { createClient } = require("redis")
 
-const REDIS_URL = "redis://localhost:6379"
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379"
 
 let client
 let redisHealthy = false
@@ -33,6 +33,7 @@ async function connectRedis() {
     redisHealthy = false
   })
 
+  console.log(`Connecting gateway Redis client to ${REDIS_URL}`)
   await client.connect()
 }
 
