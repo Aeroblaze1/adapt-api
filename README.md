@@ -121,6 +121,8 @@ adaptive-api-platform/
 ├── event-worker-service/   # Stream consumer + baseline engine
 ├── control-api-service/    # Mongo query layer
 ├── dashboard/              # Terminal-style UI
+├── tools/
+│   └── k6/                 # K6 load testing scripts
 ├── docker-compose.yml
 ```
 
@@ -171,27 +173,89 @@ npm run dev
 
 ## 🧪 Testing
 
-### 🔹 Burst Test
+### 🔹Quick Load Tests (curl)
+
+#### Burst Test
 
 ```bash
 for i in {1..100}; do curl -H "x-api-key: ak_001" http://localhost:4000/api/test & done; wait
 ```
 
----
-
-### 🔹 Sustained Load
+#### Sustained Load
 
 ```bash
 for i in {1..300}; do curl -H "x-api-key: ak_001" http://localhost:4000/api/test; sleep 0.2; done
 ```
 
----
-
-### 🔹 Continuous Load
+#### Continuous Load
 
 ```bash
 while true; do curl -H "x-api-key: ak_001" http://localhost:4000/api/test; sleep 0.05; done
 ```
+
+---
+
+### 🔹 K6 Load Testing
+
+Comprehensive load testing with real-time metrics, virtual users, and detailed performance insights.
+
+#### Install K6
+
+**macOS**
+```bash
+brew install k6
+```
+
+**Windows (PowerShell)**
+```powershell
+choco install k6
+# or download from [https://k6.io/docs/getting-started/installation/](https://github.com/grafana/k6/releases)
+```
+
+
+#### Run K6 Tests
+
+**macOS/Linux**
+```bash
+cd tools/k6
+
+# Basic load test
+k6 run load-basic.js
+
+# Burst load test (sudden spike)
+k6 run load-burst.js
+
+# Controlled ramp-up test
+k6 run load-controlled.js
+
+# Multi-endpoint test
+k6 run load-multi.js
+```
+
+**Windows (PowerShell)**
+```powershell
+cd tools\k6
+
+# Basic load test
+k6 run load-basic.js
+
+# Burst load test (sudden spike)
+k6 run load-burst.js
+
+# Controlled ramp-up test
+k6 run load-controlled.js
+
+# Multi-endpoint test
+k6 run load-multi.js
+```
+
+#### K6 Features
+
+* Real-time metrics and performance insights
+* Virtual user (VU) simulation
+* Define custom thresholds and pass/fail criteria
+* Detailed timeline reports
+* Support for complex test scenarios
 
 ---
 
