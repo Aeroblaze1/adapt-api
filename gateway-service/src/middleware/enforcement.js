@@ -51,6 +51,8 @@ async function enforcementMiddleware(req, res, next) {
   const apiKey = context.apiKey
   const action = context.enforcementAction
 
+  const violationKey = `violations:${parentId}:${apiKey}`
+
   const policy = getPolicy(context.policyId)
 
 if (!policy) {
@@ -69,6 +71,8 @@ if (!policy.enforcement) {
 
     // ---------- BLOCK_TEMP ----------
     if (action === "BLOCK_TEMP") {
+      await redis.incr(violationKey)
+await redis.expire(violationKey, 60) // 60s decay window
   console.log("[Enforcement] BLOCK_TEMP applied")
 
   await emitEnforcementEvent(context, "BLOCK", "temp_block", 429)
@@ -80,6 +84,7 @@ if (!policy.enforcement) {
 
     // ---------- TEMP_COOLDOWN ----------
 if (action === "TEMP_COOLDOWN") {
+
   console.log("[Enforcement] TEMP_COOLDOWN triggered")
 
   const exists = await redis.get(cdKey)
@@ -91,6 +96,9 @@ if (action === "TEMP_COOLDOWN") {
       error: "Cooldown active"
     })
   }
+
+    await redis.incr(violationKey)
+await redis.expire(violationKey, 60) // 60s decay window
 
   const cooldownSeconds = policy?.enforcement?.cooldownSeconds || 30
 
@@ -116,7 +124,6 @@ if (action === "LIMIT_CONCURRENCY") {
     throw new Error("Invalid concurrency value")
   }
 
-const policy = getPolicy(context.policyId)
 const MAX_CONCURRENCY = policy?.enforcement?.maxConcurrency || 5
 
   console.log("[Enforcement] LIMIT_CONCURRENCY current:", current)
@@ -144,6 +151,9 @@ const MAX_CONCURRENCY = policy?.enforcement?.maxConcurrency || 5
 
     // ---------- SOFT_THROTTLE ----------
     if (action === "SOFT_THROTTLE") {
+
+await redis.expire(violationKey, 60) // 60s decay window
+
   console.log("[Enforcement] SOFT_THROTTLE delay applied")
 
   await delay(100)
