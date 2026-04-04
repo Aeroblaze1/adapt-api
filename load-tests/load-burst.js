@@ -17,7 +17,7 @@ export let options = {
 export default function () {
   http.get('http://localhost:4000/api/test', {
     headers: {
-      'x-api-key': 'ak_002'
+      'x-api-key': 'ak_001'
     }
   })
 }

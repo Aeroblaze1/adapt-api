@@ -116,6 +116,7 @@ await redis.expire(violationKey, 60) // 60s decay window
 
 // ---------- LIMIT_CONCURRENCY ----------
 if (action === "LIMIT_CONCURRENCY") {
+  
 
   const raw = await redis.incr(cKey)
   const current = parseInt(raw, 10)
@@ -130,6 +131,9 @@ const MAX_CONCURRENCY = policy?.enforcement?.maxConcurrency || 5
 
   if (current > MAX_CONCURRENCY) {
   await redis.decr(cKey)
+
+    await redis.incr(violationKey)
+  await redis.expire(violationKey, 60)
 
   await emitEnforcementEvent(context, "BLOCK", "concurrency_limit", 429)
 
