@@ -13,7 +13,7 @@ export let options = {
     },
   },
 }
-
+// IMPORTANT: Keys must exist in seed.js
 export default function () {
   http.get('http://localhost:4000/api/test', {
     headers: {

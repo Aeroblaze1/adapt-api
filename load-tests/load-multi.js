@@ -4,9 +4,10 @@ export let options = {
   vus: 10,
   duration: '20s'
 }
-
+// IMPORTANT: Keys must exist in seed.js
 export default function () {
-  const key = Math.random() > 0.5 ? 'ak_001' : 'ak_101'
+  const keys = ['ak_001', 'ak_002', 'ak_101']
+  const key = keys[Math.floor(Math.random() * keys.length)]
 
   http.get('http://localhost:4000/api/test', {
     headers: {

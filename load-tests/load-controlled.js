@@ -4,7 +4,7 @@ export let options = {
   vus: 10,           // virtual users
   duration: '20s',   // total time
 }
-
+// IMPORTANT: Keys must exist in seed.js
 export default function () {
   http.get('http://localhost:4000/api/test', {
     headers: {

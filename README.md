@@ -160,6 +160,24 @@ npm run dev
 
 ---
 
+### 3️⃣ Optional: Seed Test Data For Quick Verification
+
+If you want to verify the flow quickly with a known provider and API key, you can seed Mongo with sample data before testing requests.
+
+```bash
+node infrastructure/mongo/seed.js
+```
+
+This inserts a sample provider and API key that you can use for checks such as:
+
+```bash
+curl -H "x-api-key: ak_001" http://localhost:4000/api/test
+```
+
+Use this when you want a fast sanity check that API key validation, gateway routing, and event generation are working locally.
+
+---
+
 ## 🔌 Ports
 
 | Service     | Port |
@@ -328,6 +346,7 @@ Built as a system design + backend engineering project focusing on:
 * Distributed systems
 * Real-time analytics
 * API security
+* API testing
 * Performance engineering
 
 ---
