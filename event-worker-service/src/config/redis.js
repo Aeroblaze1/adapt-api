@@ -5,6 +5,20 @@ const REDIS_URL = requireEnv("REDIS_URL")
 
 let client
 
+function maskRedisUrl(url) {
+  try {
+    const parsed = new URL(url)
+
+    if (parsed.password) {
+      parsed.password = "****"
+    }
+
+    return parsed.toString()
+  } catch {
+    return "[invalid redis url]"
+  }
+}
+
 async function connectRedis() {
   client = createClient({ url: REDIS_URL })
 
@@ -12,7 +26,7 @@ async function connectRedis() {
     console.error("Redis error:", err.message)
   })
 
-  console.log(`Connecting worker Redis client to ${REDIS_URL}`)
+  console.log(`Connecting worker Redis client to ${maskRedisUrl(REDIS_URL)}`)
   await client.connect()
   console.log("Worker Redis connected")
 }

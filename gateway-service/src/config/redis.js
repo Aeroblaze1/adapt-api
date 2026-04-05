@@ -6,6 +6,20 @@ const REDIS_URL = requireEnv("REDIS_URL")
 let client
 let redisHealthy = false
 
+function maskRedisUrl(url) {
+  try {
+    const parsed = new URL(url)
+
+    if (parsed.password) {
+      parsed.password = "****"
+    }
+
+    return parsed.toString()
+  } catch {
+    return "[invalid redis url]"
+  }
+}
+
 async function connectRedis() {
   client = createClient({
     url: REDIS_URL,
@@ -34,7 +48,7 @@ async function connectRedis() {
     redisHealthy = false
   })
 
-  console.log(`Connecting gateway Redis client to ${REDIS_URL}`)
+  console.log(`Connecting gateway Redis client to ${maskRedisUrl(REDIS_URL)}`)
   await client.connect()
 }
 
