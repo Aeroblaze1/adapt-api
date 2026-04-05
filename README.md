@@ -1,352 +1,415 @@
-# ⚡ Adaptive API Behavior Intelligence Platform
+# Adaptive API Behavior Intelligence Platform
 
-A **high-performance, multi-tenant, behavior-aware reverse proxy gateway** that detects API abuse in real time and enforces progressive protection policies.
+> Adaptive API Behavior Intelligence Platform is a real-time, multi-tenant reverse proxy gateway that monitors, analyzes, and controls API traffic based on dynamic usage behavior.
 
----
+It sits between client applications and upstream APIs, continuously evaluating request patterns using lightweight, deterministic scoring. Based on observed behavior, it applies progressive enforcement strategies such as throttling, cooldowns, or temporary blocking—before traffic reaches backend systems.
 
-## 🚀 Overview
+The platform is designed for low-latency decision-making, fail-open resilience, and complete separation of data and control planes, ensuring high performance without compromising reliability.
 
-This system sits between **client companies** and **parent API providers**, analyzing request patterns and dynamically enforcing rate control policies.
+## What This Is
 
-```
-Client → Gateway → Parent Load Balancer → API Cluster
-```
-
----
-
-## 🎯 Key Capabilities
-
-* 🔐 API Key Validation (multi-tenant aware)
-* 📊 Real-time Metrics (Redis hot path)
-* 🧠 Behavior Scoring Engine (O(1), deterministic)
-* ⚖️ Decision Engine (risk → enforcement stage)
-* 🛡️ Progressive Enforcement (throttle, cooldown, block)
-* 📡 Event Streaming (Redis Streams)
-* ⚙️ Asynchronous Processing (Event Worker)
-* 📈 Adaptive Baseline (Hybrid SLA + historical model)
-* 🖥️ Terminal-style Observability Dashboard
-* ⚡ Real-time WebSocket event streaming
-
----
-
-## 🧩 System Architecture
-
-```
-                ┌──────────────┐
-                │   Frontend   │
-                │ (Terminal UI)│
-                └──────┬───────┘
-                       │ WebSocket
-                ┌──────▼───────┐
-                │ Event Worker │
-                │  (Control)   │
-                └──────┬───────┘
-                       │ Redis Stream
-                ┌──────▼───────┐
-                │   Gateway    │
-                │ (Data Plane) │
-                └──────┬───────┘
-                       │
-              ┌────────▼────────┐
-              │ Parent APIs     │
-              └─────────────────┘
+```text
+Client -> Gateway -> Upstream Provider
+              |
+              v
+            Redis Streams -> Event Worker -> WebSocket -> Dashboard
+              |
+              v
+            MongoDB Atlas
 ```
 
----
+### Core responsibilities
 
-## 🧠 Core Concepts
+- validate API keys and provider ownership
+- compute real-time request metrics in Redis
+- score request behavior deterministically
+- map risk to enforcement stages
+- publish events for downstream processing
+- surface live operational visibility in the dashboard
 
-### 🔹 Behavior Scoring
+## Why It’s Interesting
 
-Risk score is computed using:
+This project is not just a reverse proxy. It combines:
 
-* Frequency deviation
-* Burst detection
-* Violation history
-* Endpoint sensitivity
+- ⚡ hot-path traffic analysis
+- 🧠 deterministic behavior scoring
+- 🛡 progressive abuse enforcement
+- 📡 event streaming with Redis Streams
+- 📊 live dashboard visibility
+- 🧪 local and production load testing with k6
 
-```
-riskScore ∈ [0,1]
-```
+## Service Map
 
----
+- `gateway-service`
+  Main reverse proxy and enforcement engine. Handles API key lookup, metrics, behavior scoring, decisions, and request forwarding.
 
-### 🔹 Hybrid Baseline Model
+- `event-worker-service`
+  Consumes Redis stream events, updates downstream state, runs the baseline scheduler, and pushes live events over WebSocket.
 
-```
-effectiveBaseline = max(SLA_baseline, historicalMovingAverage)
-```
+- `control-api-service`
+  Read-oriented API for the dashboard. Exposes providers, API keys, alerts, and risk history from MongoDB.
 
-* Prevents unfair throttling
-* Adapts to legitimate growth
-* Guards against abuse inflation
+- `dashboard`
+  React + Vite frontend for observing providers, API keys, alerts, risk trends, and live traffic behavior.
 
----
+- `infrastructure/mock-upstream.js`
+  Lightweight mock upstream for local verification and demo deployment.
 
-### 🔹 Enforcement Stages
+## Key Capabilities
 
-| Stage    | Action          |
-| -------- | --------------- |
-| NORMAL   | Allow           |
-| WATCH    | Monitor         |
-| THROTTLE | Delay           |
-| COOLDOWN | Temporary block |
-| BLOCK    | Hard block      |
+- 🔐 multi-tenant API key validation
+- 📈 Redis-backed hot-path metrics
+- 🎯 deterministic behavior scoring
+- 🚦 progressive enforcement: allow, watch, throttle, cooldown, block
+- 📨 Redis Streams event pipeline
+- ⚙ asynchronous worker processing
+- 📉 adaptive baseline updates
+- 🖥 live dashboard updates over WebSocket
 
----
-
-## 🧱 Tech Stack
+## Tech Stack
 
 ### Backend
 
-* Node.js (Gateway, Worker, Control API)
-* Express.js
-* Redis (metrics + streams)
-* MongoDB (cold storage)
+- Node.js
+- Express
+- Redis / Upstash Redis
+- MongoDB / MongoDB Atlas
 
 ### Frontend
 
-* React (Vite)
-* Recharts
-* WebSocket (real-time feed)
+- React
+- Vite
+- Recharts
+- WebSocket
 
----
+### Testing
 
-## 📦 Project Structure
+- k6
 
+## Project Structure
+
+```text
+adapt-api/
+|-- gateway-service/
+|-- event-worker-service/
+|-- control-api-service/
+|-- dashboard/
+|-- infrastructure/
+|-- load-tests/
+|-- load-tests-prod-check/
+|-- shared/
+|-- tools/
+|   `-- k6/
+|-- docker-compose.yml
+`-- README.md
 ```
-adaptive-api-platform/
-│
-├── gateway-service/        # Data plane (core proxy)
-├── event-worker-service/   # Stream consumer + baseline engine
-├── control-api-service/    # Mongo query layer
-├── dashboard/              # Terminal-style UI
-├── tools/
-│   └── k6/                 # K6 load testing scripts
-├── docker-compose.yml
+
+## Runtime Ports
+
+### Local defaults
+
+- gateway: `4000`
+- control API: `4500`
+- worker WebSocket: `4600`
+- dashboard dev server: `5173`
+- mock upstream: `5000`
+
+In production on Render, web services bind to the platform-provided `PORT`.
+
+## Environment Variables
+
+### Gateway
+
+Required:
+
+```env
+MONGO_URL=...
+DB_NAME=adaptive_api_platform
+REDIS_URL=rediss://...
 ```
 
----
+### Event Worker
 
-## ⚙️ Local Setup
+Required:
 
-### 1️⃣ Start Dependencies
+```env
+MONGO_URL=...
+DB_NAME=adaptive_api_platform
+REDIS_URL=rediss://...
+```
 
-```bash
+Optional for local-only WebSocket override:
+
+```env
+WS_PORT=4600
+```
+
+### Control API
+
+Required:
+
+```env
+MONGO_URL=...
+DB_NAME=adaptive_api_platform
+```
+
+### Dashboard
+
+Local defaults are built into the frontend, but you can also set:
+
+```env
+VITE_CONTROL_API_URL=http://localhost:4500
+VITE_WORKER_WS_URL=ws://localhost:4600
+```
+
+For production:
+
+```env
+VITE_CONTROL_API_URL=https://your-control-api-url
+VITE_WORKER_WS_URL=wss://your-worker-url
+```
+
+## Local Development
+
+### 1. Start infrastructure 🐳
+
+Start local Redis and Mongo:
+
+```powershell
 docker-compose up
 ```
 
----
+### 2. Seed local Mongo data 🌱
 
-### 2️⃣ Start Services
+The local seed script targets local Mongo and inserts:
 
-```bash
-# Gateway
-cd gateway-service
-node src/server.js
+- `providers`
+- `api_keys`
+- `policies`
 
-# Worker
-cd event-worker-service
-node src/worker.js
+Run:
 
-# Control API
-cd control-api-service
-node src/server.js
-
-# Frontend
-cd dashboard
-npm run dev
-```
-
----
-
-### 3️⃣ Optional: Seed Test Data For Quick Verification
-
-If you want to verify the flow quickly with a known provider and API key, you can seed Mongo with sample data before testing requests.
-
-```bash
+```powershell
 node infrastructure/mongo/seed.js
 ```
 
-This inserts a sample provider and API key that you can use for checks such as:
+### 3. Start the services ▶
 
-```bash
+Open separate terminals:
+
+```powershell
+cd control-api-service
+npm install
+npm start
+```
+
+```powershell
+cd gateway-service
+npm install
+npm start
+```
+
+```powershell
+cd event-worker-service
+npm install
+npm start
+```
+
+```powershell
+cd dashboard
+npm install
+npm run dev
+```
+
+Optional mock upstream:
+
+```powershell
+cd infrastructure
+npm install
+node mock-upstream.js
+```
+
+### 4. Quick local checks ✅
+
+Health endpoints:
+
+```powershell
+curl http://localhost:4500/health
+curl http://localhost:4000/health
+```
+
+Control API checks:
+
+```powershell
+curl http://localhost:4500/providers
+curl "http://localhost:4500/api-keys?providerId=parentA"
+```
+
+Gateway request:
+
+```powershell
 curl -H "x-api-key: ak_001" http://localhost:4000/api/test
 ```
 
-Use this when you want a fast sanity check that API key validation, gateway routing, and event generation are working locally.
+## Production Deployment
 
----
+### Live infrastructure ☁
 
-## 🔌 Ports
+- backend services on Render
+- Redis on Upstash
+- MongoDB on MongoDB Atlas
+- frontend on Render Static Site
 
-| Service     | Port |
-| ----------- | ---- |
-| Gateway     | 4000 |
-| Control API | 4500 |
-| WebSocket   | 4600 |
-| Frontend    | 5173 |
+### Recommended deployment order
 
----
+1. Deploy mock upstream to Render
+2. Update Mongo `providers.upstreamUrl` to the deployed upstream URL
+3. Deploy `control-api-service`
+4. Deploy `gateway-service`
+5. Deploy `event-worker-service`
+6. Deploy `dashboard`
 
-## 🧪 Testing
+### Render service mapping
 
-### 🔹Quick Load Tests (curl)
+- `infrastructure/mock-upstream.js` -> Render Web Service
+- `control-api-service` -> Render Web Service
+- `gateway-service` -> Render Web Service
+- `event-worker-service` -> Render Web Service
+- `dashboard` -> Render Static Site
 
-#### Burst Test
+### Production notes
 
-```bash
-for i in {1..100}; do curl -H "x-api-key: ak_001" http://localhost:4000/api/test & done; wait
+- 🔒 Upstash Redis should use a `rediss://` URL
+- 🗃 Atlas data should exist in the database named by `DB_NAME`
+- 🌍 `providers.upstreamUrl` in Mongo must not point to `localhost` in production
+- 🔌 dashboard websocket URL must use `wss://`, not `https://`
+- 🚀 the worker binds `process.env.PORT` first, so it is Render-compatible
+
+## API Testing
+
+Production API testing should target the deployed gateway, not the dashboard.
+
+### Useful checks
+
+```text
+GET https://your-control-api/health
+GET https://your-control-api/providers
+GET https://your-control-api/api-keys?providerId=parentA
+GET https://your-gateway/health
 ```
 
-#### Sustained Load
+### Gateway request
 
-```bash
-for i in {1..300}; do curl -H "x-api-key: ak_001" http://localhost:4000/api/test; sleep 0.2; done
-```
-
-#### Continuous Load
-
-```bash
-while true; do curl -H "x-api-key: ak_001" http://localhost:4000/api/test; sleep 0.05; done
-```
-
----
-
-### 🔹 K6 Load Testing
-
-Comprehensive load testing with real-time metrics, virtual users, and detailed performance insights.
-
-#### Install K6
-
-**macOS**
-```bash
-brew install k6
-```
-
-**Windows (PowerShell)**
 ```powershell
-choco install k6
-# or download from [https://k6.io/docs/getting-started/installation/](https://github.com/grafana/k6/releases)
+curl -H "x-api-key: ak_001" https://your-gateway-url/api/test
 ```
 
+### Expected outcomes
 
-#### Run K6 Tests
+- `200` when traffic is within policy
+- `429` when enforcement escalates
+- response headers such as `X-Risk-Score` and `X-Enforcement-Stage`
 
-**macOS/Linux**
-```bash
-cd tools/k6
+## Load Testing
 
-# Basic load test
-k6 run load-basic.js
+There are two load-testing areas in this repo:
 
-# Burst load test (sudden spike)
-k6 run load-burst.js
+- `load-tests/`
+  Local-focused scripts aimed at localhost testing.
 
-# Controlled ramp-up test
-k6 run load-controlled.js
+- `load-tests-prod-check/`
+  Production-safe k6 scripts that read target URLs and API keys from env vars instead of hardcoding secrets.
 
-# Multi-endpoint test
-k6 run load-multi.js
-```
+### Local k6 examples 🧪
 
-**Windows (PowerShell)**
+If `k6` is installed globally:
+
 ```powershell
-cd tools\k6
-
-# Basic load test
-k6 run load-basic.js
-
-# Burst load test (sudden spike)
-k6 run load-burst.js
-
-# Controlled ramp-up test
-k6 run load-controlled.js
-
-# Multi-endpoint test
-k6 run load-multi.js
+k6 run .\load-tests\load-basic.js
+k6 run .\load-tests\load-burst.js
+k6 run .\load-tests\load-controlled.js
+k6 run .\load-tests\load-multi.js
 ```
 
-#### K6 Features
+If using the bundled binary:
 
-* Real-time metrics and performance insights
-* Virtual user (VU) simulation
-* Define custom thresholds and pass/fail criteria
-* Detailed timeline reports
-* Support for complex test scenarios
-
----
-
-## 📡 Real-Time Pipeline
-
-```
-Gateway → Redis Stream → Worker → WebSocket → UI
+```powershell
+.\tools\k6\k6.exe run .\load-tests\load-basic.js
+.\tools\k6\k6.exe run .\load-tests\load-burst.js
+.\tools\k6\k6.exe run .\load-tests\load-controlled.js
+.\tools\k6\k6.exe run .\load-tests\load-multi.js
 ```
 
-* No polling
-* No Mongo in hot path
-* Sub-second visibility
+### Production-safe k6 checks 🌐
 
----
+Create a local ignored file:
 
-## 🔒 Design Guarantees
+`load-tests-prod-check/.env`
 
-* O(1) request processing
-* No synchronous DB calls in hot path
-* Multi-tenant isolation
-* Deterministic scoring
-* Fail-open on Redis failure
-* Single decision per request
+Example:
 
----
+```env
+TARGET_URL=https://your-gateway-url
+API_KEY=your_real_key
+API_KEYS=key_one,key_two,key_three
+API_PATH=/api/test
+```
 
-## 🖥️ Dashboard Features
+Load env vars in PowerShell:
 
-* Terminal-style interface
-* Provider + API key selection
-* Risk trend visualization
-* Real-time event stream
-* Alert monitoring
+```powershell
+Get-Content .\load-tests-prod-check\.env | ForEach-Object {
+  if ($_ -match '^\s*#' -or $_ -match '^\s*$') { return }
+  $name, $value = $_ -split '=', 2
+  [Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim(), 'Process')
+}
+```
 
----
+Run the scripts:
 
-## 🚀 Deployment (Overview)
+```powershell
+.\tools\k6\k6.exe run .\load-tests-prod-check\basic.js
+.\tools\k6\k6.exe run .\load-tests-prod-check\controlled.js
+.\tools\k6\k6.exe run .\load-tests-prod-check\burst.js
+.\tools\k6\k6.exe run .\load-tests-prod-check\multi.js
+```
 
-* Backend → Render / Docker
-* Frontend → Vercel
-* Redis → Upstash
-* MongoDB → Atlas
+### What each script is for
 
----
+- `basic.js`
+  Smoke test against the deployed gateway
 
-## 🔮 Future Enhancements
+- `controlled.js`
+  Gradual ramp-up to observe behavior changes over time
 
-* Advanced anomaly classification
-* ML-assisted scoring (offline)
-* Per-endpoint policies
-* Rate shaping instead of blocking
-* Distributed gateway scaling
+- `burst.js`
+  Short, high-intensity spike to stress burst handling
 
----
+- `multi.js`
+  Rotates across multiple API keys to test per-key isolation
 
-## 📌 Summary
+## Dashboard Features
 
-This project is not just a proxy.
+- 🧭 provider selection
+- 🔑 API key inspection
+- 🚨 alerts view
+- 📉 risk graph
+- 📡 live event feed over WebSocket
 
-It is a:
+## Design Guarantees
 
-> **Real-time adaptive traffic intelligence system for multi-tenant API ecosystems**
+- no synchronous database calls in the hot request path
+- Redis-backed O(1)-style metric updates
+- deterministic decisioning
+- multi-tenant separation via provider and key mapping
+- fail-open behavior when Redis is unavailable
 
----
+## Operational Notes
 
-## 👨‍💻 Author
+- the local seed script is intentionally for local Mongo, not Atlas
+- production seed data can be inserted manually in Atlas or through a separate deployment-safe workflow
+- if secrets were ever exposed in logs or chat, rotate them even if code has since been fixed
 
-Built as a system design + backend engineering project focusing on:
+## Closing Note
 
-* Distributed systems
-* Real-time analytics
-* API security
-* API testing
-* Performance engineering
-
----
+This project is more than a proxy. It is a real-time adaptive traffic intelligence layer that combines enforcement, event streaming, observability, and operational testing into one cohesive system.
