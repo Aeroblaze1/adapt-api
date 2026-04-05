@@ -1,7 +1,8 @@
 const { MongoClient } = require("mongodb")
+const { requireEnv } = require("./env")
 
-const MONGO_URL = "mongodb://localhost:27017"
-const DB_NAME = "adaptive_api_platform"
+const MONGO_URL = requireEnv("MONGO_URL")
+const DB_NAME = requireEnv("DB_NAME")
 
 let client
 let db

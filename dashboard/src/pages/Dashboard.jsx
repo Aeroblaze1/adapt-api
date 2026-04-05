@@ -47,8 +47,10 @@ select key ak_001
 }
 
   if (command === "clear") {
-    window.location.reload() // simplest safe reset
-  }
+  setProviderId(null)
+  setProviderName(null)
+  setApiKey(null)
+}
 }
 
   return (

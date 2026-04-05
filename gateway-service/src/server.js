@@ -1,3 +1,5 @@
+require("dotenv").config()
+
 const express = require("express")
 const { createProxyMiddleware } = require("http-proxy-middleware")
 const { connectMongo } = require("./config/mongo")
@@ -18,7 +20,7 @@ events.defaultMaxListeners = 50
 
 
 const app = express()
-const PORT = 4000
+const PORT = Number(process.env.PORT || 4000)
 
 app.use(express.json())
 

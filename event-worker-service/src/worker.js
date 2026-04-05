@@ -1,3 +1,5 @@
+require("dotenv").config()
+
 const { connectRedis, getRedis } = require("./config/redis")
 const { connectMongo } = require("./config/mongo")
 const { ensureConsumerGroup } = require("./stream/group")

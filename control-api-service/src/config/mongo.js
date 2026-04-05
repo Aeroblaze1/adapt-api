@@ -1,11 +1,15 @@
 const { MongoClient } = require("mongodb")
+const { requireEnv } = require("./env")
+
+const MONGO_URL = requireEnv("MONGO_URL")
+const DB_NAME = requireEnv("DB_NAME")
 
 let db
 
 async function connectMongo() {
-  const client = new MongoClient("mongodb://localhost:27017")
+  const client = new MongoClient(MONGO_URL)
   await client.connect()
-  db = client.db("adaptive_api_platform")
+  db = client.db(DB_NAME)
   console.log("Control API Mongo connected")
 }
 
