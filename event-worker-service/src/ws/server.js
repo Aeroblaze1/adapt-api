@@ -4,7 +4,7 @@ const WebSocket = require("ws")
 let wss
 let server
 const clients = new Set()
-const WS_PORT = Number(process.env.WS_PORT)
+const WS_PORT = Number(process.env.PORT || process.env.WS_PORT || 4600)
 
 function startWebSocketServer() {
   if (wss) {
