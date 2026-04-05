@@ -404,11 +404,6 @@ Run the scripts:
 - multi-tenant separation via provider and key mapping
 - fail-open behavior when Redis is unavailable
 
-## Operational Notes
-
-- the local seed script is intentionally for local Mongo, not Atlas
-- production seed data can be inserted manually in Atlas or through a separate deployment-safe workflow
-- if secrets were ever exposed in logs or chat, rotate them even if code has since been fixed
 
 ## Closing Note
 
