@@ -11,6 +11,8 @@ tools/k6/*
 .env
 .env.local
 .env.*.local
+load-tests-prod-check/.env
+load-tests-prod-check/.env.local
 
 # Build outputs
 dist/
