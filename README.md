@@ -6,6 +6,13 @@ It sits between client applications and upstream APIs, continuously evaluating r
 
 The platform is designed for low-latency decision-making, fail-open resilience, and complete separation of data and control planes, ensuring high performance without compromising reliability.
 
+## Live Deployment
+
+- Dashboard: https://adapt-dashboard.onrender.com
+- Gateway Health: https://adapt-gateway.onrender.com/health
+- Control API Health: https://adapt-control-api.onrender.com/health
+- Mock Upstream: https://adapt-mock-upstream.onrender.com
+
 ## What This Is
 
 ```text
